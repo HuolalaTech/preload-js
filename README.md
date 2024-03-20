@@ -147,3 +147,25 @@ const data = await usePreload('userInfo', () => getUserInfo({ userId }), [
   removeOnCatch(false), // 不传默认为 true，和全局配置默认值为 true 一致
 ]);
 ```
+
+#### 7. useDebounce
+
+使用场景：某个接口频繁触发防抖
+
+```javascript
+import {
+  usePreload,
+  useDebounce,
+  isDebounceReject,
+} from '@huolala-tech/preload-js';
+
+const data = await usePreload(
+  'userInfo',
+  () => getUserInfo({ userId }),
+  [useDebounce(1000)], // 默认为 300ms
+).catch((e) => {
+  if (isDebounceReject(e)) {
+    return;
+  }
+});
+```

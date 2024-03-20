@@ -1,6 +1,6 @@
 {
   "name": "@huolala-tech/preload-js",
-  "version": "1.0.0",
+  "version": "1.1.0-rc.0",
   "description": "页面数据预请求与缓存",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

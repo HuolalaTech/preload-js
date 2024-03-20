@@ -1,4 +1,10 @@
-import { preload, usePreload, useDep } from '../index';
+import {
+  preload,
+  usePreload,
+  useDep,
+  useDebounce,
+  isDebounceReject,
+} from '../index';
 
 describe('preload-js', () => {
   it('preload without deps', async () => {
@@ -66,6 +72,17 @@ describe('preload-js', () => {
     const res2 = await usePreload('test4', () => 4, [dep]);
     expect(res2).toEqual(4);
     const res3 = await usePreload('test4', () => 5, [dep]);
+    expect(res3).toEqual(4);
+  });
+
+  it('usePreload with debounce', async () => {
+    await usePreload('test5', () => 2, [useDebounce()]).catch((e) => {
+      expect(isDebounceReject(e)).toEqual(true);
+    });
+    await usePreload('test5', () => 3, [useDebounce()]).catch((e) => {
+      expect(isDebounceReject(e)).toEqual(true);
+    });
+    const res3 = await usePreload('test5', () => 4, [useDebounce()]);
     expect(res3).toEqual(4);
   });
 });
