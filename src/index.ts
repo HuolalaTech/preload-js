@@ -1,6 +1,6 @@
 type KeyType = string | number;
 type DepType = string | number | boolean | symbol;
-interface Dep {
+export interface Dep {
   value: DepType;
   __IS_PRELOAD_DEP__: boolean;
 }
@@ -12,8 +12,8 @@ type Deps = (DepType | Dep | RemoveOnCatch | IgnoreOnCatch)[];
 
 type PreloaderType<R> = {
   resolve: (response?: R) => void;
-  reject: (reason?: R) => void;
-  promise: Promise<R>;
+  reject: (reason?: unknown) => void;
+  promise: Promise<Awaited<R>>;
   resolved: boolean;
   rejected: boolean;
 };
@@ -36,30 +36,29 @@ export function setConfig(options: typeof config) {
 }
 
 export function createPromiseEvent<R>(data?: R): PreloaderType<R> {
-  let resolved = false;
-  let rejected = false;
   let resolve = (response?: R) => {};
-  let reject = (reason?: R) => {};
-  const promise: Promise<R> = new Promise((resolver, rejecter) => {
+  let reject = (reason?: unknown) => {};
+  const closure: Partial<PreloaderType<R>> = {
+    resolved: false,
+    rejected: false,
+  };
+  const promise = new Promise<Awaited<R>>((resolver, rejecter) => {
     resolve = (response?: R) => {
-      resolved = true;
-      resolver(response as R);
+      closure.resolved = true;
+      resolver(response as Awaited<R>);
     };
-    reject = (response?: R) => {
-      rejected = true;
-      rejecter(response);
+    reject = (reason?: unknown) => {
+      closure.rejected = true;
+      rejecter(reason);
     };
   });
   if (data) {
     resolve(data);
   }
-  return {
-    resolve,
-    reject,
-    promise,
-    resolved,
-    rejected,
-  };
+  closure.resolve = resolve;
+  closure.reject = reject;
+  closure.promise = promise;
+  return closure as PreloaderType<R>;
 }
 
 function isDep(x: any): x is Dep {
@@ -78,7 +77,7 @@ export function preload<T extends KeyType, R>(
   id: T,
   request: () => R,
   deps: Deps = [],
-): Promise<R> {
+): Promise<Awaited<R>> {
   const catchRefresh = hasCatchRefresh(deps);
   const catchIgnore = hasCatchIgnore(deps);
   const mappedDeps = mapDeps(deps);
@@ -114,7 +113,7 @@ export function usePreload<T extends KeyType, R>(
   id: T,
   request: () => R,
   deps: Deps = [],
-): Promise<R> {
+): Promise<Awaited<R>> {
   const catchRefresh = hasCatchRefresh(deps);
   const catchIgnore = hasCatchIgnore(deps);
   const mappedDeps = mapDeps(deps);
